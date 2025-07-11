@@ -1,0 +1,35 @@
+name: Project Review Task Automation
+
+env:
+  PROJECT_ID:
+on:
+  workflow_dispatch: # For manual testing
+  # You can also use scheduled or webhook triggers
+
+jobs:
+  automate_project_tasks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get install jq
+
+      - name: Find tasks moved to Review
+        # You’d need to use the REST API to poll for changes
+        run: |
+          # Example: Fetch project items, filter for status change
+          # You’ll need to customize this script!
+          # API: https://docs.github.com/en/rest/projects
+
+      - name: Create a review task if needed
+        # Use the API to create a new linked item
+
+      - name: Listen for review task completion
+        # Use a workflow or scheduled job to check for review tasks set to Done
+
+      - name: Update original task to Done
+        # Use the API to update the original item’s status
+    env:
+      GITHUB_TOKEN: ${{ secrets.PAT_PROJECT_AUTOMATION }}
