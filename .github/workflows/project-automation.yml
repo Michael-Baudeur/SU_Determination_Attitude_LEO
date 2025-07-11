@@ -40,5 +40,5 @@ jobs:
                   }
                 }"
               }' \
-              https://api.github.com/graphql
+              https://api.github.com/graphql 
       
