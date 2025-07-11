@@ -1,7 +1,7 @@
 name: Project Review Task Automation
 
 env:
-  PROJECT_ID:
+  PROJECT_ID: PVT_kwHOBWzUNM4A9eKK
 on:
   workflow_dispatch: # For manual testing
   # You can also use scheduled or webhook triggers
