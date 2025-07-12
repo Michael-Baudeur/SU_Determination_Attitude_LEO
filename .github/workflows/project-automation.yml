@@ -3,8 +3,7 @@ name: Project Review Task Automation
 env:
   PROJECT_ID: PVT_kwHOBWzUNM4A9eKK
 on:
-  schedule:
-    - cron: '*/5 * * * *' #every 5 minutes
+  switch_workflow:
 
 jobs:
   automate_project_tasks:
