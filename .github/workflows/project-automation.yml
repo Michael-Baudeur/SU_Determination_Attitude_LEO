@@ -3,7 +3,14 @@ name: Project Review Task Automation
 env:
   PROJECT_ID: PVT_kwHOBWzUNM4A9eKK
 on:
-  switch_workflow:
+  push:
+  pull_request:
+  issues:
+  issue_comment:
+  pull_request_review:
+  pull_request_review_comment:
+  release:
+  workflow_dispatch:
 
 jobs:
   automate_project_tasks:
@@ -13,6 +20,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_PROJECT_AUTOMATION }}
         run: |
+          echo "automation run"
           curl -X POST \
             -H "Authorization : Bearer $GITHUB_TOKEN" \
             -H "Content-Type: application/json"\
