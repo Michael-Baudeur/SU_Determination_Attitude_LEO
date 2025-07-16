@@ -21,31 +21,31 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.PAT_PROJECT_AUTOMATION }}
         run: |
           echo "automation run"
-          curl -X POST \
-            -H "Authorization : Bearer $GITHUB_TOKEN" \
-            -H "Content-Type: application/json"\
-            -d '{
-                "query":"{
-                  node(id: \\\"$PROJECT_ID\\\") {
-                    ... on ProjectV2 { items(first: 10) {
-                      nodes {
-                        content {
-                          ... on Issue {
-                            title number 
-                            } 
-                          } 
-                          fieldValues(first: 10) {
-                            nodes {
-                              value projectField {
-                                name
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }"
-              }' \
-              https://api.github.com/graphql 
+          #curl -X POST \
+          #  -H "Authorization : Bearer $GITHUB_TOKEN" \
+          #  -H "Content-Type: application/json"\
+          #  -d '{
+          #      "query":"{
+          #        node(id: \\\"$PROJECT_ID\\\") {
+          #          ... on ProjectV2 { items(first: 10) {
+          #            nodes {
+          #              content {
+          #                ... on Issue {
+          #                  title number 
+          #                  } 
+          #                } 
+          #                fieldValues(first: 10) {
+          #                  nodes {
+          #                    value projectField {
+          #                      name
+          #                    }
+          #                  }
+          #                }
+          #              }
+          #            }
+          #          }
+          #        }
+          #      }"
+          #    }' \
+          #    https://api.github.com/graphql 
       
