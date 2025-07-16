@@ -2,6 +2,7 @@ name: Project Review Task Automation
 
 env:
   PROJECT_ID: PVT_kwHOBWzUNM4A9eKK
+  GITHUB_TOKEN: ${{ secrets.PAT_PROJECT_AUTOMATION }}
 on:
   push:
   pull_request:
@@ -16,36 +17,60 @@ jobs:
   automate_project_tasks:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get previous state
+        id: previous
+        uses: actions/cache@v4
+        with:
+          path: prev_review_items.json
+          key: project-review-state
+
+      - name: List issues in Review
+        id: get_review
+        run: |
+          curl -s -X POST \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{
+                "query": "{
+                  node(id: \"PVT_PROJECTID\") {
+                    ... on ProjectV2 {
+                      items(first: 100) {
+                        nodes {
+                          content {
+                            ... on Issue {
+                              title
+                              number
+                            }
+                          }
+                          fieldValues(first: 10) {
+                            nodes {
+                              value
+                              projectField {
+                                name
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }"
+              }' \
+              https://api.github.com/graphql > current_review_items.json
+
+            cat current_review_items.json
+        
       - name: Check project status field
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT_PROJECT_AUTOMATION }}
         run: |
           echo "automation run"
-          #curl -X POST \
-          #  -H "Authorization : Bearer $GITHUB_TOKEN" \
-          #  -H "Content-Type: application/json"\
-          #  -d '{
-          #      "query":"{
-          #        node(id: \\\"$PROJECT_ID\\\") {
-          #          ... on ProjectV2 { items(first: 10) {
-          #            nodes {
-          #              content {
-          #                ... on Issue {
-          #                  title number 
-          #                  } 
-          #                } 
-          #                fieldValues(first: 10) {
-          #                  nodes {
-          #                    value projectField {
-          #                      name
-          #                    }
-          #                  }
-          #                }
-          #              }
-          #            }
-          #          }
-          #        }
-          #      }"
-          #    }' \
-          #    https://api.github.com/graphql 
+          curl -X POST \
+            -H "Authorization : Bearer $GITHUB_TOKEN" \
+            -H "Content-Type: application/json"\
+            -d '{
+                
+              }' \
+              https://api.github.com/graphql 
       
