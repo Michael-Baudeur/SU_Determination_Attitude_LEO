@@ -58,14 +58,15 @@ jobs:
                                     }
                                   }
                                 }
-                                ... on ProjectV2ItemFieldTextValue {
-                                  field {
-                                    ... on ProjectV2Field {
-                                      name
-                                    }
+                                optionID
+                              }
+                              ... on ProjectV2ItemFieldTextValue {
+                                field {
+                                  ... on ProjectV2Field {
+                                    name
                                   }
-                                  text
                                 }
+                                text
                               }
                             }
                           }
