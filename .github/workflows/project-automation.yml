@@ -58,7 +58,7 @@ jobs:
                                     }
                                   }
                                 }
-                                optionID
+                                optionId
                               }
                               ... on ProjectV2ItemFieldTextValue {
                                 field {
