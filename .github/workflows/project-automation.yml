@@ -49,16 +49,22 @@ jobs:
                           fieldValues(first: 20) {
                             nodes {
                               ... on ProjectV2ItemFieldSingleSelectValue {
-                                name
-                                value
-                                projectField {
-                                  name
+                                field {
+                                  ... on ProjectV2SingleSelectField {
+                                    name
+                                    options {
+                                      id
+                                      name
+                                    }
+                                  }
                                 }
-                              }
-                              ... on ProjectV2ItemFieldTextValue {
-                                text
-                                projectField {
-                                  name
+                                ... on ProjectV2ItemFieldTextValue {
+                                  field {
+                                    ... on ProjectV2Field {
+                                      name
+                                    }
+                                  }
+                                  text
                                 }
                               }
                             }
