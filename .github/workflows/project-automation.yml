@@ -35,7 +35,7 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{
                 "query": "{
-                  node(id: \"PROJECT_ID\") {
+                  node(id: \"$PROJECT_ID\") {
                     ... on ProjectV2 {
                       items(first: 100) {
                         nodes {
