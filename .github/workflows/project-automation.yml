@@ -48,9 +48,18 @@ jobs:
                           }
                           fieldValues(first: 20) {
                             nodes {
-                              value
-                              projectField {
+                              ... on ProjectV2ItemFieldSingleSelectValue {
                                 name
+                                value
+                                projectField {
+                                  name
+                                }
+                              }
+                              ... on ProjectV2ItemFieldTextValue {
+                                text
+                                projectField {
+                                  name
+                                }
                               }
                             }
                           }
