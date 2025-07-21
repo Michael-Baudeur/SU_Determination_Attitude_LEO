@@ -30,14 +30,15 @@ jobs:
       - name: List issues in Review
         id: get_review
         run: |
-          curl -s -X POST \
+          curl -s -X POST https://api.github.com/graphql \
             -H "Authorization: Bearer $GITHUB_TOKEN" \
             -H "Content-Type: application/json" \
-            -d '{
+            -d @- <<EOF > current_review_items.json
+              {
                 "query": "{
                   node(id: \"${PROJECT_ID}\") {
                     ... on ProjectV2 {
-                      items(first: 100) {
+                      items(first: 20) {
                         nodes {
                           content {
                             ... on Issue {
@@ -45,7 +46,7 @@ jobs:
                               number
                             }
                           }
-                          fieldValues(first: 10) {
+                          fieldValues(first: 20) {
                             nodes {
                               value
                               projectField {
@@ -58,10 +59,10 @@ jobs:
                     }
                   }
                 }"
-              }' \
-              https://api.github.com/graphql > current_review_items.json
-            echo "review items content"
-            cat current_review_items.json
+              }
+              EOF
+              echo "review items content"
+              cat current_review_items.json
         
       #- name: Check project status field
       #  run: |
