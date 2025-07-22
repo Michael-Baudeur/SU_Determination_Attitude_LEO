@@ -17,6 +17,7 @@ with open("current_review_items.json") as file:
 #parcours des cartes du project
 for item in data["data"]["node"]["items"]["nodes"]:
   title = item["content"]["title"]
+  print(f"Processing issue: {title}")
   status = None
   #parcours des custom fields
   for field in item["fieldValues"]["nodes"]:
@@ -29,6 +30,7 @@ for item in data["data"]["node"]["items"]["nodes"]:
         if opt["id"] == option_id:
           status = opt["name"]
           break
+    print(f"Detected status field for '{title}': {status}")
     if status == "Review":
       issue_title = f"Review {title}"
       print(f"Creating issue: {issue_title}")
