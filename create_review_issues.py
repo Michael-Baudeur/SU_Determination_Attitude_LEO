@@ -21,10 +21,10 @@ for item in data["data"]["node"]["items"]["nodes"]:
       options = field["field"]["options"]
       option_id = field.get("OptionId")
       #Match de l'option avec l'option Id
-        for opt in options:
-          if opt["id"] == option_id:
-            status = opt["name"]
-            break
+      for opt in options:
+        if opt["id"] == option_id:
+          status = opt["name"]
+          break
     if status == "Review":
       issue_title = f"Review {title}"
       print(f"Creating issue: {issue_title}")
