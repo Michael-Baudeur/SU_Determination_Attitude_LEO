@@ -21,16 +21,19 @@ for item in data["data"]["node"]["items"]["nodes"]:
   status = None
   #parcours des custom fields
   for field in item["fieldValues"]["nodes"]:
+    print(f"check field {field.get("field", {}).get("name")}")
     #check du custom field status
     if field.get("field", {}).get("name") == "Status":
+      print(f"Detected status field for {title}")
       options = field["field"]["options"]
       option_id = field.get("OptionId")
       #Match de l'option avec l'option Id
       for opt in options:
         if opt["id"] == option_id:
           status = opt["name"]
+          print(f"Issue status: {status}")
           break
-    print(f"Detected status field for '{title}': {status}")
+    
     if status == "Review":
       issue_title = f"Review {title}"
       print(f"Creating issue: {issue_title}")
