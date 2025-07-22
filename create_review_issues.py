@@ -26,7 +26,7 @@ for item in data["data"]["node"]["items"]["nodes"]:
     if field.get("field", {}).get("name") == "Status":
       print(f"Checking status...")
       options = field["field"]["options"]
-      option_id = field.get("OptionId")
+      option_id = field.get("optionId")
       print(f"Options: {options}")
       print(f"Option Id: {option_id}")
       #Match de l'option avec l'option Id
