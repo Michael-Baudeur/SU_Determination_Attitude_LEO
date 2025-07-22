@@ -38,7 +38,7 @@ for item in data["data"]["node"]["items"]["nodes"]:
           "title": issue_title,
           "body": f"Issue reveiw auto-created for '{title}'"
         }
-      }
+      )
       if r.status_code == 201:
         print(f"✅ Created: {r.json()['html_url']}")
       else:
