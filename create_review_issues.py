@@ -6,6 +6,10 @@ OWNER = "Michael-Baudeur"
 REPO = "SU_Determination_Attitude_LEO"
 TOKEN = os.environ.get("GITHUB_TOKEN", "")
 
+print("Working directory:", os.getcwd())
+print("Files in directory:", os.listdir())
+
+print("Creating review tasks...")
 #Load JSON
 with open("current_review_items.json") as file:
   data = json.load(file)
