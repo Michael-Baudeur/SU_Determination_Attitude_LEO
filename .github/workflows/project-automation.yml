@@ -79,15 +79,6 @@ jobs:
           EOF
           echo "review items content"
           cat current_review_items.json
-        
-      #- name: Check project status field
-      #  run: |
-      #    echo "automation run"
-      #    curl -X POST \
-      #      -H "Authorization : Bearer $GITHUB_TOKEN" \
-      #      -H "Content-Type: application/json"\
-      #      -d '{
-      #          
-      #        }' \
-      #        https://api.github.com/graphql 
-      
+
+      - name: Create review task
+        run: python3 create_review_issues.py
