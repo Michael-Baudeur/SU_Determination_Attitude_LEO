@@ -38,22 +38,42 @@ for item in data["data"]["node"]["items"]["nodes"]:
     
     if status == "Review":
       issue_title = f"Review {title}"
-      print(f"Creating issue: {issue_title}")
-      r = requests.post(
-        f"https://api.github.com/repos/{OWNER}/{REPO}/issues",
-        headers={
-          "Authorization": f"Bearer {TOKEN}",
-          "Accept": "application/vnd.github+json"
-        },
-        json={
-          "title": issue_title,
-          "body": f"Issue reveiw auto-created for '{title}'"
-        }
-      )
-      if r.status_code == 201:
-        print(f"✅ Created: {r.json()['html_url']}")
+      if not review_issue_exists(OWNER, REPO, issue_title, TOKEN):
+        print(f"Creating issue: {issue_title}")
+        r = requests.post(
+          f"https://api.github.com/repos/{OWNER}/{REPO}/issues",
+          headers={
+            "Authorization": f"Bearer {TOKEN}",
+            "Accept": "application/vnd.github+json"
+          },
+          json={
+            "title": issue_title,
+            "body": f"Issue reveiw auto-created for '{title}'"
+          }
+        )
+        if r.status_code == 201:
+          print(f"✅ Created: {r.json()['html_url']}")
+        else:
+          print(f"❌ Error: {r.status_code} {r.text}")
       else:
-        print(f"❌ Error: {r.status_code} {r.text}")
-        
+        print("Issue already exist")
+
+
+def review_issue_exists(owner, repo, issue_title,token):
+  url = f"https://api.github.com/repos/{owner}/{repo}/issues"
+  headers = {
+    "Authorization": f"Bearer {token}",
+    "Accept": "application/vnd.github+json"
+  }
+  params = {"state": "all", "per_page": 100}
+  r = requests.get(url, headers=headers, params=params)
+  if r.status_code == 200:
+    issues = r.json()
+    for issue in issues:
+      if issue["title"] == issue_title:
+        return True
+  return False
+
+
     
       
