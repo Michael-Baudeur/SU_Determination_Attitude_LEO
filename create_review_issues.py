@@ -6,6 +6,22 @@ OWNER = "Michael-Baudeur"
 REPO = "SU_Determination_Attitude_LEO"
 TOKEN = os.environ.get("GITHUB_TOKEN", "")
 
+def review_issue_exists(owner, repo, issue_title,token):
+  url = f"https://api.github.com/repos/{owner}/{repo}/issues"
+  headers = {
+    "Authorization": f"Bearer {token}",
+    "Accept": "application/vnd.github+json"
+  }
+  params = {"state": "all", "per_page": 100}
+  r = requests.get(url, headers=headers, params=params)
+  if r.status_code == 200:
+    issues = r.json()
+    for issue in issues:
+      if issue["title"] == issue_title:
+        return True
+  return False
+
+
 print("Working directory:", os.getcwd())
 print("Files in directory:", os.listdir())
 
@@ -57,23 +73,4 @@ for item in data["data"]["node"]["items"]["nodes"]:
           print(f"❌ Error: {r.status_code} {r.text}")
       else:
         print("Issue already exist")
-
-
-def review_issue_exists(owner, repo, issue_title,token):
-  url = f"https://api.github.com/repos/{owner}/{repo}/issues"
-  headers = {
-    "Authorization": f"Bearer {token}",
-    "Accept": "application/vnd.github+json"
-  }
-  params = {"state": "all", "per_page": 100}
-  r = requests.get(url, headers=headers, params=params)
-  if r.status_code == 200:
-    issues = r.json()
-    for issue in issues:
-      if issue["title"] == issue_title:
-        return True
-  return False
-
-
     
-      
