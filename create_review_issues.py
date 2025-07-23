@@ -97,6 +97,7 @@ def get_field_and_option_id(option = "Todo", field = "Status", filename = "curre
         options = f_field["field"]["options"]
         #Match de l'option avec l'option Id
         for opt in options:
+          print(f"option name: {opt["name"]}")
           if opt["name"] == option:
             option_id = opt["id"]
             print(f"option id: {option_id}")
