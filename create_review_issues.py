@@ -117,7 +117,7 @@ def run_gql(query, variables=None):
     resp.raise_for_status()
     return resp.json()
   
-def add_issue_to_project(issue_node_id, project_id, status_field_id, list_option_id):
+def add_issue_to_project(issue_node_id, project_id, status_field_id, option_id):
     # Step 1: Add item to project
     add_item_query = """
     mutation($projectId:ID!, $contentId:ID!) {
@@ -146,12 +146,16 @@ def add_issue_to_project(issue_node_id, project_id, status_field_id, list_option
         "projectId": project_id,
         "itemId": project_item_id,
         "fieldId": status_field_id,
-        "optionId": todo_option_id
+        "optionId": option_id
     })
     print("✅ Issue added to ProjectV2 and set to 'Todo'.")
 
 def add_issues_to_project(nodes_ids, column = 'Todo'):
   field_id, option_id = get_field_and_option_id(column)
   for id in nodes_ids:
+    add_issue_to_project(id, PROJECT_ID, field_id, option_id)
+
+nodes_IDs = create_review_issues()
+add_issues_to_project(nodes_IDS)
     
   
