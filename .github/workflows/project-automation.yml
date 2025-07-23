@@ -51,6 +51,7 @@ jobs:
                               ... on ProjectV2ItemFieldSingleSelectValue {
                                 field {
                                   ... on ProjectV2SingleSelectField {
+                                    id
                                     name
                                     options {
                                       id
