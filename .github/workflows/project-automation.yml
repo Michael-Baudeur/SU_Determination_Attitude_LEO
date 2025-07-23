@@ -3,6 +3,7 @@ name: Project Review Task Automation
 env:
   PROJECT_ID: PVT_kwHOBWzUNM4A9eKK
   GITHUB_TOKEN: ${{ secrets.PAT_PROJECT_AUTOMATION }}
+  CLASSIC_GITHUB_TOKEN: ${{ secrets.CLASSIC_GITHUB_TOKEN }}
 on:
   push:
   pull_request:
