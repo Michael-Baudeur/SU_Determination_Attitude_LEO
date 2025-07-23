@@ -27,7 +27,7 @@ def review_issue_exists(owner, repo, issue_title,token):
 print("Working directory:", os.getcwd())
 print("Files in directory:", os.listdir())
 
-def create_review_issues(filename = "current_review_itmes.json"):
+def create_review_issues(filename = "current_review_items.json"):
   print("Creating review tasks...")
   #Load JSON
   with open(filename) as file:
