@@ -12,7 +12,7 @@ def review_issue_exists(owner, repo, issue_title,token):
     "Authorization": f"Bearer {token}",
     "Accept": "application/vnd.github+json"
   }
-  params = {"state": "all", "per_page": 100}
+  params = {"state": "open", "per_page": 100}
   r = requests.get(url, headers=headers, params=params)
   if r.status_code == 200:
     issues = r.json()
