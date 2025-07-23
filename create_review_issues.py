@@ -163,6 +163,7 @@ def add_issue_to_project(issue_node_id, project_id, status_field_id, option_id):
 
 def add_issues_to_project(nodes_ids, column = 'Todo'):
   field_id, option_id = get_field_and_option_id(column)
+  print(f"option Id: {option_id}")
   for id in nodes_ids:
     print(f"Adding Issue: {id} to project")
     add_issue_to_project(id, PROJECT_ID, field_id, option_id)
