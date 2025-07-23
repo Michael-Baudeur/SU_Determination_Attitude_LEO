@@ -142,13 +142,15 @@ def add_issue_to_project(issue_node_id, project_id, status_field_id, option_id):
     
     # Step 2: Set Status to 'Todo'
     update_status_query = """
-    mutation($projectId:ID!, $itemId:ID!, $fieldId:ID!, $optionId:ID!) {
-      updateProjectV2ItemFieldValue(input: {
+    mutation($projectId:ID!, $itemId:ID!, $fieldId:ID!, $optionId:String!) {
+      updateProjectV2ItemFieldValue(
+      input: {
         projectId: $projectId,
         itemId: $itemId,
         fieldId: $fieldId,
         value: { singleSelectOptionId: $optionId }
-      }) {
+      }
+    ) {
         projectV2Item { id }
       }
     }
@@ -163,7 +165,6 @@ def add_issue_to_project(issue_node_id, project_id, status_field_id, option_id):
 
 def add_issues_to_project(nodes_ids, column = 'Todo'):
   field_id, option_id = get_field_and_option_id(column)
-  print(f"option Id: {option_id}")
   for id in nodes_ids:
     print(f"Adding Issue: {id} to project")
     add_issue_to_project(id, PROJECT_ID, field_id, option_id)
