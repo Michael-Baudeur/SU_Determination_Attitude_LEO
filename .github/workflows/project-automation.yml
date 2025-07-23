@@ -81,5 +81,5 @@ jobs:
           cat current_review_items.json
 
       - name: Create review task
-        run: create_review_issues.py
+        run: python3 create_review_issues.py
         
