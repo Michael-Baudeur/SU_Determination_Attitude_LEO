@@ -136,6 +136,7 @@ def add_issue_to_project(issue_node_id, project_id, status_field_id, option_id):
       project_item_id = response["data"]["addProjectV2ItemById"]["item"]["id"]
     else:
       print(f"Error in API response: {response}")
+      return None
     
     # Step 2: Set Status to 'Todo'
     update_status_query = """
