@@ -6,6 +6,7 @@ GITHUB_API = "https://api.github.com/graphql"
 OWNER = "Michael-Baudeur"
 REPO = "SU_Determination_Attitude_LEO"
 TOKEN = os.environ.get("GITHUB_TOKEN", "")
+CLASSIC_TOKEN = os.environ.get("CLASSIC_GITHUB_TOKEN", "")
 PROJECT_ID = os.environ.get("PROJECT_ID","")
 
 def review_issue_exists(owner, repo, issue_title,token):
@@ -107,7 +108,7 @@ def get_field_and_option_id(option = "Todo", field = "Status", filename = "curre
 
 def run_gql(query, variables=None):
     headers = {
-        "Authorization": f"Bearer {TOKEN}",
+        "Authorization": f"Bearer {CLASSIC_TOKEN}",
         "Accept": "application/vnd.github+json"
     }
     payload = {"query": query, "variables": variables}
