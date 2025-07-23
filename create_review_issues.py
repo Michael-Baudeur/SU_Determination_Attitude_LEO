@@ -56,29 +56,29 @@ def create_review_issues(filename = "current_review_items.json"):
             print(f"Issue status: {status}")
             break
     
-      if status == "Review":
-        issue_title = f"Review {title}"
-        if not review_issue_exists(OWNER, REPO, issue_title, TOKEN):
-          print(f"Creating issue: {issue_title}")
-          r = requests.post(
-            f"https://api.github.com/repos/{OWNER}/{REPO}/issues",
-            headers={
-              "Authorization": f"Bearer {TOKEN}",
-              "Accept": "application/vnd.github+json"
-            },
-            json={
-              "title": issue_title,
-              "body": f"Issue reveiw auto-created for '{title}'"
-            }
-          )
-          if r.status_code == 201:
-            print(f"✅ Created: {r.json()['html_url']}")
-            issue_nodes_ids.append(r.json()["node_id"])
-          else:
-            print(f"❌ Error: {r.status_code} {r.text}")
+    if status == "Review":
+      issue_title = f"Review {title}"
+      if not review_issue_exists(OWNER, REPO, issue_title, TOKEN):
+        print(f"Creating issue: {issue_title}")
+        r = requests.post(
+          f"https://api.github.com/repos/{OWNER}/{REPO}/issues",
+          headers={
+            "Authorization": f"Bearer {TOKEN}",
+            "Accept": "application/vnd.github+json"
+          },
+          json={
+            "title": issue_title,
+            "body": f"Issue reveiw auto-created for '{title}'"
+          }
+        )
+        if r.status_code == 201:
+          print(f"✅ Created: {r.json()['html_url']}")
+          issue_nodes_ids.append(r.json()["node_id"])
         else:
-          print("Review issue already exist")
-    return issue_nodes_ids
+          print(f"❌ Error: {r.status_code} {r.text}")
+      else:
+        print("Review issue already exist")
+  return issue_nodes_ids
 
 def get_field_and_option_id(option = "Todo", field = "Status", filename = "current_review_items.json"):
   field_id = None
