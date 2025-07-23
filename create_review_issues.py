@@ -156,6 +156,6 @@ def add_issues_to_project(nodes_ids, column = 'Todo'):
     add_issue_to_project(id, PROJECT_ID, field_id, option_id)
 
 nodes_IDs = create_review_issues()
-add_issues_to_project(nodes_IDS)
+add_issues_to_project(nodes_IDs)
     
   
