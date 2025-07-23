@@ -110,24 +110,32 @@ def run_gql(query, variables=None):
         "Authorization": f"Bearer {TOKEN}",
         "Accept": "application/vnd.github+json"
     }
-    payload = {"query": query}
+    payload = {"query": query, "variables": variables}
     if variables:
         payload["variables"] = variables
-    resp = requests.post(GITHUB_API, headers=headers, json=payload)
-    resp.raise_for_status()
-    return resp.json()
+    response = requests.post(GITHUB_API, headers=headers, json=payload)
+    response.raise_for_status()
+    return response.json()
   
 def add_issue_to_project(issue_node_id, project_id, status_field_id, option_id):
     # Step 1: Add item to project
     add_item_query = """
     mutation($projectId:ID!, $contentId:ID!) {
       addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {
-        item { id }
+        item { 
+          id 
+        }
       }
     }
     """
-    res = run_gql(add_item_query, {"projectId": project_id, "contentId": issue_node_id})
-    project_item_id = res["data"]["addProjectV2ItemById"]["item"]["id"]
+    response = run_gql(add_item_query, {"projectId": project_id, "contentId": issue_node_id})
+    if(response.get("data")
+       and response["data"].get("addProjectV2ItemById")
+       and response["data"]["addProjectV2ItemById"].get("item")
+    ):
+      project_item_id = response["data"]["addProjectV2ItemById"]["item"]["id"]
+    else:
+      print(f"Error in API response: {response}")
     
     # Step 2: Set Status to 'Todo'
     update_status_query = """
