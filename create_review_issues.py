@@ -2,7 +2,7 @@ import json
 import os
 import requests
 
-GITHUB_API_gql = "https://api.github.com/graphql"
+GITHUB_API = "https://api.github.com/graphql"
 OWNER = "Michael-Baudeur"
 REPO = "SU_Determination_Attitude_LEO"
 TOKEN = os.environ.get("GITHUB_TOKEN", "")
