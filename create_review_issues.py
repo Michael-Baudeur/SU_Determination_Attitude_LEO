@@ -91,7 +91,7 @@ def get_field_and_option_id(option = "Todo", field = "Status", filename = "curre
     for f_field in item["fieldValues"]["nodes"]:
       #check du custom field status
       if f_field.get("field", {}).get("name") == field:
-        field_id = f_field["field"]["id"]
+        field_id = f_field.get("field", {}).get("id")
         print(f"field id: {field_id}")
         options = f_field["field"]["options"]
         #Match de l'option avec l'option Id
