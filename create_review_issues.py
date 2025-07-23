@@ -72,5 +72,5 @@ for item in data["data"]["node"]["items"]["nodes"]:
         else:
           print(f"❌ Error: {r.status_code} {r.text}")
       else:
-        print("Issue already exist")
+        print("Review issue already exist")
     
