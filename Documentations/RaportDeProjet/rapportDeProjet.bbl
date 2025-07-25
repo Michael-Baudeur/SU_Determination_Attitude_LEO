@@ -1,0 +1,25 @@
+\begin{thebibliography}{1}
+
+\bibitem{noauthor_basic_nodate}
+A {Basic} {Guide} to {Nanosatellites}.
+
+\bibitem{center_ncei_nodate}
+National Geophysical~Data Center.
+\newblock {NCEI} {Geomagnetic} {Calculators}.
+\newblock Publisher: U.S. Department of Commerce.
+
+\bibitem{nurgizat_low-cost_2023}
+Yerkebulan Nurgizat, Abu-Alim Ayazbay, Dimitri Galayko, Gani Balbayev, and
+  Kuanysh Alipbayev.
+\newblock Low-{Cost} {Orientation} {Determination} {System} for {CubeSat}
+  {Based} {Solely} on {Solar} and {Magnetic} {Sensors}.
+\newblock {\em Sensors}, 23(14):6388, July 2023.
+
+\bibitem{nurgizat_solar_2021}
+Yerkebulan Nurgizat, Gani Balbayev, and Dimitri Galayko.
+\newblock Solar sensor for {Cubesat} attitude determination.
+\newblock In {\em 2021 28th {IEEE} {International} {Conference} on
+  {Electronics}, {Circuits}, and {Systems} ({ICECS})}, pages 1--5, Dubai,
+  United Arab Emirates, November 2021. IEEE.
+
+\end{thebibliography}

@@ -1,0 +1,50 @@
+This is BibTeX, Version 0.99d
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: rapportDeProjet.aux
+Reallocating 'name_of_file' (item size: 1) to 6 items.
+The style file: plain.bst
+Reallocating 'name_of_file' (item size: 1) to 23 items.
+Database file #1: Determination_attitude.bib
+Warning--to sort, need author or key in noauthor_basic_nodate
+You've used 4 entries,
+            2118 wiz_defined-function locations,
+            520 strings with 4745 characters,
+and the built_in function-call counts, 1181 in all, are:
+= -- 109
+> -- 54
+< -- 1
++ -- 23
+- -- 18
+* -- 78
+:= -- 190
+add.period$ -- 11
+call.type$ -- 4
+change.case$ -- 21
+chr.to.int$ -- 0
+cite$ -- 5
+duplicate$ -- 44
+empty$ -- 103
+format.name$ -- 18
+if$ -- 252
+int.to.chr$ -- 0
+int.to.str$ -- 4
+missing$ -- 2
+newline$ -- 21
+num.names$ -- 6
+pop$ -- 33
+preamble$ -- 1
+purify$ -- 17
+quote$ -- 0
+skip$ -- 35
+stack$ -- 0
+substring$ -- 49
+swap$ -- 9
+text.length$ -- 1
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 16
+warning$ -- 1
+while$ -- 10
+width$ -- 5
+write$ -- 40
+(There was 1 warning)
