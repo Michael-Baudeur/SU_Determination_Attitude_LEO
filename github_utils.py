@@ -35,7 +35,8 @@ def setup_config(debug, owner, repository, project, github_finegrained_token, gi
   GITHUB_FINEGRAINED_TOKEN=github_finegrained_token
   GITHUB_CLASSIC_TOKEN=github_classic_token
   PROJECT_ID=project_id
-  
+
+# ==== GraphQL Utility ====
 def run_gql(query, variables=None, token=None):
   """
   Runs a GraphQL query or mutation through the Github API.
@@ -63,7 +64,9 @@ def run_gql(query, variables=None, token=None):
     if DEBUG == 2:
       print(f"GraphQL response JSON: {response.json()}")
     return response.json()
+# =========================================================
 
+# ==== Getters ====
 def get_ProjectV2_ID(owner=OWNER, repository=REPOSITORY, project=PROJECT, token=None):
   """
   Returns the repository associated ProjectV2 ID from the repository owner and name and the name of the ProjectV2.
@@ -339,8 +342,6 @@ def get_option_name(option_id, field_name, project_id=PROJECT_ID, token=None):
                     return opt["name"]
     print("Option name not found.")
     return None
-  
-# =================== Pull Request Accessors =====================
 
 def get_pull_request_id(number, owner=OWNER, repository=REPOSITORY, token=None):
     """
@@ -390,6 +391,32 @@ def get_pull_request_info(pull_request_id, token):
     if DEBUG:
       print(f"Pull request infos: {pull_request_info}")
     return pull_request_info
+
+# ======================================================
+
+# ==== Setters ====
+def create_issue(title, body, owner=OWNER, repository=REPOSITORY, token=None):
+  """
+  Creates a new Github issue.
+
+  Args:
+      title (str): Issue title.
+      body (str): Issue body.
+      owner (str): Github user or organization.
+      repository (str): Repository name.
+      token (str): Github API token.
+
+  Returns:
+      dict: The API response with issue data.
+  """
+  url = f"https://api.github.com/repos/{owner}/{repository}/issues"
+  headers = {
+    "Authorization": f"Bearer {token}",
+    "Accept": "application/vnd.github+json"
+  }
+  response = requests.post(url, headers=headers, json={"title": title, "body": body})
+  response.raise_for_status()
+  return response.json()
 
 
 
