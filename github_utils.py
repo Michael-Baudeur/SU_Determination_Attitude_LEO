@@ -35,6 +35,13 @@ def setup_config(debug, owner, repository, project, github_finegrained_token, gi
   GITHUB_FINEGRAINED_TOKEN=github_finegrained_token
   GITHUB_CLASSIC_TOKEN=github_classic_token
   PROJECT_ID=project_id
+  if DEBUG:
+    print(f"Owner: {OWNER}")
+    print(f"Repository: {REPOSITORY}")
+    print(f"PROJECT: {PROJECT}")
+    print(f"Fine grained token: {GITHUB_FINEGRAINED_TOKEN}")
+    print(f"Classic toke: {GITHUB_CLASSIC_TOKEN}")
+    print(f"Project Id: {PROJECT_ID}")
 
 # ==== GraphQL Utility ====
 def run_gql(query, variables=None, token=None):
@@ -297,7 +304,7 @@ def get_option_id(option_name, field_name, project_id=PROJECT_ID, token=None):
           if opt["name"] == option_name:
             if DEBUG:
               print(f"Option ID: {opt["id"]}")
-              return opt["id"]
+            return opt["id"]
     if DEBUG:
       print("Option ID not found.")
     return None
@@ -315,7 +322,7 @@ def get_option_name(option_id, field_name, project_id=PROJECT_ID, token=None):
     Returns:
         str: The option name, or None if not found.
     """
-    q = """
+    query = """
     query($project: ID!) {
       node(id: $project) {
         ... on ProjectV2 {
@@ -331,7 +338,7 @@ def get_option_name(option_id, field_name, project_id=PROJECT_ID, token=None):
       }
     }
     """
-    response = run_gql(q, {"project": project_id}, token)
+    response = run_gql(query, {"project": project_id}, token)
     fields = response["data"]["node"]["fields"]["nodes"]
     for field in fields:
         if field["name"] == field_name:
@@ -340,7 +347,8 @@ def get_option_name(option_id, field_name, project_id=PROJECT_ID, token=None):
                     if DEBUG:
                       print(f"Option name: {opt["name"]}")
                     return opt["name"]
-    print("Option name not found.")
+    if DEBUG:
+      print("Option name not found.")
     return None
 
 def get_pull_request_id(number, owner=OWNER, repository=REPOSITORY, token=None):
@@ -368,7 +376,7 @@ def get_pull_request_id(number, owner=OWNER, repository=REPOSITORY, token=None):
       print(f"Pull request ID: {pull_request_id}")
     return pull_request_id
 
-def get_pull_request_info(pull_request_id, token):
+def get_pull_request_info(pull_request_id, token=None):
     """
     Returns PR details (number, title) given its node ID.
 
@@ -379,22 +387,205 @@ def get_pull_request_info(pull_request_id, token):
     Returns:
         dict: PR info including number and title.
     """
-    q = """
+    query = """
     query($id: ID!) {
       node(id: $id) {
         ... on PullRequest { number title }
       }
     }
     """
-    response = run_gql(q, {"id": pr_id}, token)
+    response = run_gql(query, {"id": pull_request_id}, token)
     pull_request_info = response["data"]["node"]
     if DEBUG:
       print(f"Pull request infos: {pull_request_info}")
     return pull_request_info
 
+def get_project_item_id_by_issue_title(title, project_id=PROJECT_ID, token=None):
+    """
+    Returns the ProjectV2 item ID for a card whose linked issue or PR has the given title.
+    WARNING: Issue/PR titles are not unique! Returns the first match.
+
+    Args:
+        title (str): The title of the issue associated to the projectV2 item.
+        project_id (str) The ProjectV2 ID (PVT_xxx).
+        token (str): GitHub token.
+
+    Returns:
+        str: The ProjectV2 item ID, or None if not found.
+    """
+    query = """
+    query($project: ID!) {
+      node(id: $project) {
+        ... on ProjectV2 {
+          items(first: 100) {
+            nodes {
+              id
+              content {
+                ... on Issue { title }
+              }
+            }
+          }
+        }
+      }
+    }
+    """
+    response = run_gql(query, {"project": project_id}, token)
+    items = response["data"]["node"]["items"]["nodes"]
+    for item in items:
+        c = item.get("content")
+        if c and c.get("title") == title:
+            if DEBUG:
+              print(f"Item ID of issue \"{title}\": {item["id"]}")
+            return item["id"]
+    return None
+
+def get_project_item_id_by_pull_request_title(title, project_id=PROJECT_ID, token=None):
+    """
+    Returns the ProjectV2 item ID for a card whose linked issue or PR has the given title.
+    WARNING: Issue/PR titles are not unique! Returns the first match.
+
+    Args:
+        title (str): The title of the pull request associated to the projectV2 item.
+        project_id (str) The ProjectV2 ID (PVT_xxx).
+        token (str): GitHub token.
+
+    Returns:
+        str: The ProjectV2 item ID, or None if not found.
+    """
+    query = """
+    query($project: ID!) {
+      node(id: $project) {
+        ... on ProjectV2 {
+          items(first: 100) {
+            nodes {
+              id
+              content {
+                ... on PullRequest { title }
+              }
+            }
+          }
+        }
+      }
+    }
+    """
+    response = run_gql(query, {"project": project_id}, token)
+    items = response["data"]["node"]["items"]["nodes"]
+    for item in items:
+        c = item.get("content")
+        if c and c.get("title") == title:
+            return item["id"]
+    return None
+
+def get_project_item_id_by_issue_number(issue_number, project_id=PROJECT_ID, token=None):
+    """
+    Returns the ProjectV2 item ID (PVTI_xxx) for an issue number in the project.
+
+    Args:
+        project_id (str): The ProjectV2 ID (PVT_xxx).
+        issue_number (int): The issue number.
+        token (str): GitHub token.
+
+    Returns:
+        str: The ProjectV2 item ID, or None if not found.
+    """
+    query = """
+    query($project: ID!) {
+      node(id: $project) {
+        ... on ProjectV2 {
+          items(first: 100) {
+            nodes {
+              id
+              content {
+                ... on Issue { number }
+              }
+            }
+          }
+        }
+      }
+    }
+    """
+    response = run_gql(query, {"project": project_id}, token)
+    items = response["data"]["node"]["items"]["nodes"]
+    for item in items:
+        c = item.get("content")
+        if c and c.get("number") == issue_number:
+            return item["id"]
+    return None
+
+def get_project_item_id_by_pull_request_number(pull_request_number, project_id=PROJECT_ID, token=None):
+    """
+    Returns the ProjectV2 item ID for a card whose linked PR has the given number.
+
+    Args:
+        project_id (str): The ProjectV2 ID (PVT_xxx).
+        pull_request_number (int): The pull request number.
+        token (str): GitHub token.
+
+    Returns:
+        str: The ProjectV2 item ID, or None if not found.
+    """
+    query = """
+    query($project: ID!) {
+      node(id: $project) {
+        ... on ProjectV2 {
+          items(first: 100) {
+            nodes {
+              id
+              content {
+                ... on PullRequest { number }
+              }
+            }
+          }
+        }
+      }
+    }
+    """
+    response = run_gql(query, {"project": project_id}, token)
+    items = response["data"]["node"]["items"]["nodes"]
+    for item in items:
+        c = item.get("content")
+        if c and c.get("number") == pull_request_number:
+            return item["id"]
+    return None
+
 # ======================================================
 
 # ==== Setters ====
+def update_project_item_field(item_id, field_id, value_dict, project_id=PROJECT_ID, token=None):
+    """
+    Updates a ProjectV2 field for a given item (e.g., set status, text, or date).
+
+    Args:
+        project_id (str): ProjectV2 node ID.
+        item_id (str): ProjectV2 item node ID.
+        field_id (str): Field node ID.
+        value_dict (dict): Dict describing the value to set (singleSelectOptionId, text, or date).
+        token (str): GitHub API token.
+
+    Returns:
+        dict: The API response.
+    """
+    query = """
+    mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $value: ProjectV2FieldValue!) {
+      updateProjectV2ItemFieldValue(input: {
+        projectId: $projectId,
+        itemId: $itemId,
+        fieldId: $fieldId,
+        value: $value
+      }) {
+        projectV2Item { id }
+      }
+    }
+    """
+    vars = {
+        "projectId": project_id,
+        "itemId": item_id,
+        "fieldId": field_id,
+        "value": value_dict
+    }
+    response = run_gql(query, vars, token)
+    return response
+
 def create_issue(title, body, owner=OWNER, repository=REPOSITORY, token=None):
   """
   Creates a new Github issue.
