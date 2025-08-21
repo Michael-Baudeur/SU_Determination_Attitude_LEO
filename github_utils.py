@@ -188,7 +188,7 @@ def get_issue_info(issue_id, token=None):
     print(f"Issue info: {issue_info}")
   return issue_info
 
-def get_field_id(field_name, project_id=PROJECT_ID, token=None)
+def get_field_id(field_name, project_id=PROJECT_ID, token=None):
   """
   Returns the field ID for a ProjectV2 field given its name.
 
