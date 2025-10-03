@@ -1,0 +1,6 @@
+Caractéristiques Panneaux solaire
+
+• Tension de charge maximale de 6,4 V.
+• Tension de circuit ouvert 8,2 V
+• Courant typique 100 mA
+Tension typique 5,5 V.
