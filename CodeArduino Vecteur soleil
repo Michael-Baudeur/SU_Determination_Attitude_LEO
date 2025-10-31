@@ -1,0 +1,33 @@
+
+// Mesure de la tension des 6 panneaux solaires avec Arduino/ESP32
+
+const int nbPanneaux = 6;
+const int pinsMesure[nbPanneaux] = {A0, A3, A6, A7, A4, A5};
+
+float tensions[nbPanneaux] = {0};
+float courant[nbPanneaux] = {0}; 
+void setup() {
+  Serial.begin(115200);
+}
+
+void loop() {
+  for (int i = 0; i < nbPanneaux; i++) {
+    int valeurBrute = analogRead(pinsMesure[i]);
+
+    tensions[i] = (valeurBrute * 3.3) / 4095.0;
+    courant [i] = tensions [i]/0.1;
+  
+
+    // Affichage
+    Serial.print("Panneau ");
+    Serial.print(i + 1);
+    Serial.print(" (pin ");
+    Serial.print(pinsMesure[i]);
+    Serial.print(") : ");
+    Serial.print(courant[i]);
+    Serial.println("mA");
+  }
+
+  Serial.println("-----------------------------");
+  delay(1000);  
+}
