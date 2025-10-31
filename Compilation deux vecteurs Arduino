@@ -1,0 +1,118 @@
+
+#include <Arduino.h>
+#include <Wire.h>
+#include "bmm150.h"
+#include "bmm150_defs.h"
+
+// -------------------------------
+// BMM150 - Déclaration et setup
+// -------------------------------
+BMM150 bmm = BMM150();
+bmm150_mag_data value_offset;
+
+// -------------------------------
+// Panneaux solaires - Déclaration
+// -------------------------------
+const int nbPanneaux = 6;
+const int pinsMesure[nbPanneaux] = {A0, A3, A6, A7, A4, A5};
+float tensions[nbPanneaux] = {0};
+float courants[nbPanneaux] = {0}; 
+
+// -------------------------------
+// Calibration BMM150
+// -------------------------------
+void calibrate(uint32_t timeout) {
+  int16_t value_x_min = 0, value_x_max = 0;
+  int16_t value_y_min = 0, value_y_max = 0;
+  int16_t value_z_min = 0, value_z_max = 0;
+
+  bmm.read_mag_data();  
+  value_x_min = value_x_max = bmm.raw_mag_data.raw_datax;
+  value_y_min = value_y_max = bmm.raw_mag_data.raw_datay;
+  value_z_min = value_z_max = bmm.raw_mag_data.raw_dataz;
+  delay(100);
+
+  uint32_t timeStart = millis();
+  
+  while ((millis() - timeStart) < timeout) {
+    bmm.read_mag_data();
+    if (value_x_min > bmm.raw_mag_data.raw_datax) value_x_min = bmm.raw_mag_data.raw_datax;
+    if (value_x_max < bmm.raw_mag_data.raw_datax) value_x_max = bmm.raw_mag_data.raw_datax;
+    if (value_y_min > bmm.raw_mag_data.raw_datay) value_y_min = bmm.raw_mag_data.raw_datay;
+    if (value_y_max < bmm.raw_mag_data.raw_datay) value_y_max = bmm.raw_mag_data.raw_datay;
+    if (value_z_min > bmm.raw_mag_data.raw_dataz) value_z_min = bmm.raw_mag_data.raw_dataz;
+    if (value_z_max < bmm.raw_mag_data.raw_dataz) value_z_max = bmm.raw_mag_data.raw_dataz;
+
+    Serial.print(".");
+    delay(100);
+  }
+
+  value_offset.x = value_x_min + (value_x_max - value_x_min) / 2;
+  value_offset.y = value_y_min + (value_y_max - value_y_min) / 2;
+  value_offset.z = value_z_min + (value_z_max - value_z_min) / 2;
+}
+
+// -------------------------------
+// Setup
+// -------------------------------
+void setup() {
+  Serial.begin(115200);
+  delay(1000);
+
+  // Initialisation du capteur magnétique
+  if (bmm.initialize() == BMM150_E_ID_NOT_CONFORM) {
+    Serial.println("Erreur : Impossible de lire l'ID du BMM150 !");
+    while (1);
+  } else {
+    Serial.println("BMM150 initialisé !");
+  }
+
+  Serial.println("Calibration du BMM150 dans 3 secondes...");
+  delay(3000);
+  calibrate(10000);
+  Serial.println("\nCalibration terminée.");
+
+  Serial.println("Démarrage des mesures...");
+}
+
+// -------------------------------
+// Boucle principale
+// -------------------------------
+void loop() {
+  // --- Lecture du magnétomètre ---
+  bmm150_mag_data value;
+  bmm.read_mag_data();
+
+  value.x = bmm.raw_mag_data.raw_datax - value_offset.x;
+  value.y = bmm.raw_mag_data.raw_datay - value_offset.y;
+  value.z = bmm.raw_mag_data.raw_dataz - value_offset.z;
+
+  float heading = atan2(value.x, value.y);
+  if (heading < 0) heading += 2 * PI;
+  float headingDegrees = heading * 180 / M_PI;
+
+  Serial.println("\n=== Données BMM150 ===");
+  Serial.print("X: "); Serial.println(value.x);
+  Serial.print("Y: "); Serial.println(value.y);
+  Serial.print("Z: "); Serial.println(value.z);
+  Serial.print("Direction (deg): "); Serial.println(headingDegrees);
+
+  // --- Lecture des panneaux solaires ---
+  Serial.println("\n=== Mesure des panneaux solaires ===");
+  for (int i = 0; i < nbPanneaux; i++) {
+    int valeurBrute = analogRead(pinsMesure[i]);
+    tensions[i] = (valeurBrute * 3.3) / 4095.0;  // Pour ESP32
+    courants[i] = tensions[i] / 0.1;  // Exemple : résistance de shunt = 0.1 ohm
+
+    Serial.print("Panneau ");
+    Serial.print(i + 1);
+    Serial.print(" (pin ");
+    Serial.print(pinsMesure[i]);
+    Serial.print(") : ");
+    Serial.print(courants[i]);
+    Serial.println(" mA");
+  }
+
+  Serial.println("-----------------------------");
+  delay(1000);
+}
