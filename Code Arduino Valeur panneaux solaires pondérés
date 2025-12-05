@@ -1,13 +1,20 @@
 #include <Arduino.h>
 #include <Wire.h>
-#include "bmm150.h"
-#include "bmm150_defs.h"
+#include "DFRobot_BMM150.h"
 
-// -------------------------------
-// BMM150 - Déclaration et setup
-// -------------------------------
-BMM150 bmm = BMM150();
-bmm150_mag_data value_offset;
+//When using I2C communication, use the following program to construct an object by DFRobot_BMM150_I2C
+/*!
+ * @brief Constructor 
+ * @param pWire I2C controller
+ * @param I2C address
+ *        i2c Address select, that CS and SDO pin select 1 or 0 indicates the high or low respectively. There are 4 combinations: 
+ *          I2C_ADDRESS_1 0x10  (CS:0 SDO:0)
+ *          I2C_ADDRESS_2 0x11  (CS:0 SDO:1)
+ *          I2C_ADDRESS_3 0x12  (CS:1 SDO:0)
+ *          I2C_ADDRESS_4 0x13  (CS:1 SDO:1) default i2c address
+ */
+DFRobot_BMM150_I2C bmm150(&Wire, I2C_ADDRESS_4);
+
 
 // -------------------------------
 // Panneaux solaires - Déclaration
@@ -20,36 +27,8 @@ float courants[nbPanneaux] = {0};
 // -------------------------------
 // Calibration BMM150
 // -------------------------------
-void calibrate(uint32_t timeout) {
-  int16_t value_x_min = 0, value_x_max = 0;
-  int16_t value_y_min = 0, value_y_max = 0;
-  int16_t value_z_min = 0, value_z_max = 0;
 
-  bmm.read_mag_data();  
-  value_x_min = value_x_max = bmm.raw_mag_data.raw_datax;
-  value_y_min = value_y_max = bmm.raw_mag_data.raw_datay;
-  value_z_min = value_z_max = bmm.raw_mag_data.raw_dataz;
-  delay(100);
 
-  uint32_t timeStart = millis();
-  
-  while ((millis() - timeStart) < timeout) {
-    bmm.read_mag_data();
-    if (value_x_min > bmm.raw_mag_data.raw_datax) value_x_min = bmm.raw_mag_data.raw_datax;
-    if (value_x_max < bmm.raw_mag_data.raw_datax) value_x_max = bmm.raw_mag_data.raw_datax;
-    if (value_y_min > bmm.raw_mag_data.raw_datay) value_y_min = bmm.raw_mag_data.raw_datay;
-    if (value_y_max < bmm.raw_mag_data.raw_datay) value_y_max = bmm.raw_mag_data.raw_datay;
-    if (value_z_min > bmm.raw_mag_data.raw_dataz) value_z_min = bmm.raw_mag_data.raw_dataz;
-    if (value_z_max < bmm.raw_mag_data.raw_dataz) value_z_max = bmm.raw_mag_data.raw_dataz;
-
-    Serial.print(".");
-    delay(100);
-  }
-
-  value_offset.x = value_x_min + (value_x_max - value_x_min) / 2;
-  value_offset.y = value_y_min + (value_y_max - value_y_min) / 2;
-  value_offset.z = value_z_min + (value_z_max - value_z_min) / 2;
-}
 
 // -------------------------------
 // Setup
@@ -58,43 +37,74 @@ void setup() {
   Serial.begin(115200);
   delay(1000);
 
-  // Initialisation du capteur magnétique
-  if (bmm.initialize() == BMM150_E_ID_NOT_CONFORM) {
-    Serial.println("Erreur : Impossible de lire l'ID du BMM150 !");
-    while (1);
-  } else {
-    Serial.println("BMM150 initialisé !");
-  }
+  while(!Serial);
+  while(bmm150.begin()){
+    Serial.println("bmm150 init failed, Please try again!");
+    delay(13000);
+  } Serial.println("bmm150 init success!");
 
-  Serial.println("Calibration du BMM150 dans 3 secondes...");
-  delay(3000);
-  calibrate(10000);
-  Serial.println("\nCalibration terminée.");
+  /**!
+   * Set sensor operation mode
+   * opMode:
+   *   BMM150_POWERMODE_NORMAL  // normal mode  Get geomagnetic data normally
+   *   BMM150_POWERMODE_FORCED  // forced mode  Single measurement, the sensor restores to sleep mode when the measurement is done.
+   *   BMM150_POWERMODE_SLEEP   // sleep mode   Users can visit all the registers, but can't measure geomagnetic data
+   *   BMM150_POWERMODE_SUSPEND // suspend mode At the time the sensor cpu doesn't work and can't implement any operation.
+   *                                            Users can only visit the content of the control register BMM150_REG_POWER_CONTROL
+   */
+  bmm150.setOperationMode(BMM150_POWERMODE_NORMAL);
 
-  Serial.println("Démarrage des mesures...");
+  /**!
+   * Set preset mode, make it easier for users to configure sensor to get geomagnetic data
+   * presetMode:
+   *   BMM150_PRESETMODE_LOWPOWER      // Low power mode, get a small number of data and take the mean value.
+   *   BMM150_PRESETMODE_REGULAR       // Regular mode, get a number of data and take the mean value.
+   *   BMM150_PRESETMODE_ENHANCED      // Enhanced mode, get a large number of data and take the mean value.
+   *   BMM150_PRESETMODE_HIGHACCURACY  // High accuracy mode, get a huge number of data and take the mean value.
+   */
+  bmm150.setPresetMode(BMM150_PRESETMODE_HIGHACCURACY);
+
+  /**!
+   * Set the rate of obtaining geomagnetic data, the higher, the faster (without delay function)
+   * rate:
+   *   BMM150_DATA_RATE_02HZ
+   *   BMM150_DATA_RATE_06HZ
+   *   BMM150_DATA_RATE_08HZ
+   *   BMM150_DATA_RATE_10HZ   (default rate)
+   *   BMM150_DATA_RATE_15HZ
+   *   BMM150_DATA_RATE_20HZ
+   *   BMM150_DATA_RATE_25HZ
+   *   BMM150_DATA_RATE_30HZ
+   */
+  bmm150.setRate(BMM150_DATA_RATE_10HZ);
+
+  /**!
+   * Enable the measurement at x-axis, y-axis and z-axis, default to be enabled, no config required, the geomagnetic data at x, y and z will be incorrect when disabled.
+   * Refer to setMeasurementXYZ() function in the .h file if you want to configure more parameters.
+   */
+  bmm150.setMeasurementXYZ();
 }
+
 
 // -------------------------------
 // Boucle principale
 // -------------------------------
 void loop() {
   // --- Lecture du magnétomètre ---
-  bmm150_mag_data value;
-  bmm.read_mag_data();
-
-  value.x = bmm.raw_mag_data.raw_datax;
-  value.y = bmm.raw_mag_data.raw_datay;
-  value.z = bmm.raw_mag_data.raw_dataz;
-
-  float heading = atan2(value.x, value.y);
+  sBmm150MagData_t magData = bmm150.getGeomagneticData();
+  float heading = atan2(magData.x, magData.y);
   if (heading < 0) heading += 2 * PI;
   float headingDegrees = heading * 180 / M_PI;
 
+
   Serial.println("\n=== Données BMM150 ===");
-  Serial.print("X: "); Serial.println(value.x);
-  Serial.print("Y: "); Serial.println(value.y);
-  Serial.print("Z: "); Serial.println(value.z);
-  Serial.print("Direction (deg): "); Serial.println(headingDegrees);
+  Serial.print("X: "); Serial.println(magData.x); 
+  Serial.print("Y: "); Serial.println(magData.y); 
+  Serial.print("Z: "); Serial.println(magData.z+30); 
+  Serial.print("Direction (deg): "); 
+  Serial.println(headingDegrees);
+  float compassDegree = bmm150.getCompassDegree();
+
 
   // --- Lecture des panneaux solaires ---
  Serial.println("\n=== Mesure des panneaux solaires ===");
