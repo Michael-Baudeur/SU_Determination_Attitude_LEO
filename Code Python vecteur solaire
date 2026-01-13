@@ -1,0 +1,117 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Oct 10 16:09:23 2025
+
+@author: julesmartel
+"""
+
+import serial
+import numpy as np
+import matplotlib.pyplot as plt
+import time
+
+
+
+# ----- CONFIG -----
+PORT = '/dev/tty.usbserial-0001'   # adapte ('COM3' sur Windows)
+BAUD = 115200
+TIMEOUT = 1.0
+
+# ----- OUVERTURE SERIE -----
+try:
+    ser = serial.Serial(PORT, BAUD, timeout=TIMEOUT)
+except Exception as e:
+    print(f"Erreur ouverture port série {PORT}: {e}")
+    raise
+
+# ----- PREPARATION GRAPHIQUE (mode interactif) -----
+plt.ion()
+fig = plt.figure(figsize=(7, 7))
+ax = fig.add_subplot(111, projection='3d')
+
+colors = ['r', 'r', 'g', 'g', 'b', 'b']   # +X,-X,+Y,-Y,+Z,-Z
+labels = ['+X', '-X', '+Y', '-Y', '+Z', '-Z']
+
+print("Lecture des données Arduino... (Ctrl+C pour arrêter)")
+
+try:
+    while True:
+        line = ser.readline().decode('utf-8', errors='ignore').strip()
+        if not line:
+            continue
+
+        # accepter séparateur ',' ou ';'
+        parts = [p for p in line.replace(';', ',').split(',') if p.strip() != '']
+        try:
+            valeurs = [float(p) for p in parts]
+        except ValueError:
+            print("Ligne non numérique reçue :", line)
+            continue
+
+        if len(valeurs) != 6:
+            print("Attendu 6 valeurs, reçu", len(valeurs), "->", line)
+            continue
+
+        print("Valeurs reçues :", valeurs)
+
+        # ----- Construction des 6 vecteurs
+        # On suppose l'ordre: +X, -X, +Y, -Y, +Z, -Z
+        x1 = np.array([valeurs[0], 0.0, 0.0])
+        x2 = np.array([valeurs[1], 0.0, 0.0])
+        y1 = np.array([0.0, valeurs[2], 0.0])
+        y2 = np.array([0.0, valeurs[3], 0.0])
+        z1 = np.array([0.0, 0.0, valeurs[4]])
+        z2 = np.array([0.0, 0.0, valeurs[5]])
+
+        # mettre le signe négatif pour les panneaux opposés
+        vecteurs = np.array([ x1, -x2, y1, -y2, z1, -z2 ])
+
+        # ----- Normalisation (évite division par zéro)
+        scale = np.max(np.abs(vecteurs))
+        if scale < 1e-9:
+            v_unitaire = vecteurs.copy()
+        else:
+            v_unitaire = vecteurs / scale
+
+        # ----- Vecteur total (vecteur soleil)
+        vecteur_soleil = np.sum(v_unitaire, axis=0)
+        print("Vecteur Soleil =", vecteur_soleil.round(4))
+
+        # ----- Tracé (on efface et on redessine pour mise à jour simple)
+        ax.cla()
+
+        for v, c, lab in zip(v_unitaire, colors, labels):
+            ax.quiver(0, 0, 0, v[0], v[1], v[2],
+                      color=c, alpha=0.6, linewidth=1, arrow_length_ratio=0.08)
+
+        # vecteur soleil en évidence
+        ax.quiver(0, 0, 0, vecteur_soleil[0], vecteur_soleil[1], vecteur_soleil[2],
+                  color='gold', linewidth=3, arrow_length_ratio=0.12, label='Vecteur Soleil')
+
+        # limites automatiques symétriques
+        lim = max(1.0, np.max(np.abs(v_unitaire)) * 1.2, np.max(np.abs(vecteur_soleil)) * 1.2)
+        ax.set_xlim([-lim, lim])
+        ax.set_ylim([-lim, lim])
+        ax.set_zlim([-lim, lim])
+
+        ax.set_xlabel('X (droite)')
+        ax.set_ylabel('Y (haut)')
+        ax.set_zlabel('Z (vers toi)')
+        ax.grid(True)
+        ax.view_init(elev=30, azim=-60)
+        ax.legend()
+
+        # annotation du vecteur soleil (coordonnées)
+        ax.text(vecteur_soleil[0], vecteur_soleil[1], vecteur_soleil[2],
+                f"{vecteur_soleil.round(2)}", color='gold')
+
+        plt.draw()
+        plt.pause(0.05)  # petit délai pour laisser matplotlib rafraîchir
+
+except KeyboardInterrupt:
+    print("Arrêt par utilisateur.")
+finally:
+    ser.close()
+    plt.ioff()
+    plt.show()
