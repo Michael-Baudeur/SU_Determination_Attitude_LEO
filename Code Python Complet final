@@ -1,0 +1,253 @@
+## =========================================== ##
+## ====== DETERMINATION ATTITUDE CUBSAT ====== ##
+## =========================================== ##
+
+# ====== IMPORTS ====== #
+
+import serial
+import time
+import re
+import numpy as np
+import matplotlib.pyplot as plt
+import threading
+import queue
+import math
+
+# ====== FONCTIONS VECTEURS ET QUATERNIONS  ====== #
+
+### Fonctions de calculs sur vecteurs ###
+
+def normalisation(v):
+    norm = np.linalg.norm(v)
+    V = [v[0]/norm, v[1]/norm, v[2]/norm]
+    return V
+
+def produit_vectoriel(u, v):    
+    x = u[1]*v[2] - u[2]*v[1]
+    y = u[2]*v[0] - u[0]*v[2]
+    z = u[0]*v[1] - u[1]*v[0]
+    return [x, y, z]
+
+def produit_scalaire(u,v):
+    return u[0]*v[0] + u[1]*v[1] + u[2]*v[2]
+
+### Fonctions de calculs sur quaternion ###
+
+def conjugue_quaternion(q):
+    return [q[0],-q[1], -q[2] ,-q[3]]
+
+def produit_quaternion(q1, q2):
+    return [q1[0]*q2[0] - q1[1]*q2[1] - q1[2]*q2[2] - q1[3]*q2[3],
+            q1[0]*q2[1] + q1[1]*q2[0] + q1[2]*q2[3] - q1[3]*q2[2],
+            q1[0]*q2[2] - q1[1]*q2[3] + q1[2]*q2[0] + q1[3]*q2[1],
+            q1[0]*q2[3] + q1[1]*q2[2] - q1[2]*q2[1] + q1[3]*q2[0]]
+
+def rotation(q, v):
+    q = np.array(q)
+    q = q / np.linalg.norm(q)
+    V = [0, v[0], v[1], v[2]]
+    A = produit_quaternion(q, V)
+    Rot = produit_quaternion(A, conjugue_quaternion(q))
+    R = Rot[1:]
+    norm = np.linalg.norm(R)
+    if norm > 0:
+        R = R / norm
+    return R
+
+def rotation_angle(u,v):
+    vx, vy, vz = produit_vectoriel(u, v)
+    q = [1 + produit_scalaire(u,v), vx, vy, vz]
+    return q
+
+
+# ====== PORT SÉRIE  ====== #
+
+q = queue.Queue()
+end = threading.Event()
+
+def lectureuart(end):
+    port = '/dev/tty.usbserial-0001'  
+    baudrate = 115200
+    ser = serial.Serial(port, baudrate, timeout=1)
+    time.sleep(2)
+    line = '\x00'*36
+    q.put(line)
+
+    while not end.is_set() : 
+        line = ser.readline().decode('utf-8', errors='ignore').strip()
+        q.put(line)
+    
+    ser.close()
+          
+writer_thread = threading.Thread(target=lectureuart, args = (end,))
+writer_thread.start()
+
+print("Lecture des données depuis l'Arduino...\n")
+
+
+# ====== PARAMÈTRES ====== #
+
+courants = {}
+mag_data = {'x': None, 'y': None, 'z': None}
+
+B_ref = np.array([-0.193,-0.064,-0.979])
+S_ref = np.array([0.993, -0.016, 0.116])
+
+
+# ====== PLOT DE RÉFERENCE ====== #
+
+plt.ion()
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+ax.set_xlim([-1, 1])
+ax.set_ylim([-1, 1])
+ax.set_zlim([-1, 1])
+ax.set_xlabel('X (+/-)')
+ax.set_ylabel('Y (+/-)')
+ax.set_zlabel('Z (+/-)')
+ax.set_title('-------- Détermination d’attitude --------', fontsize=12, fontweight='heavy')
+ax.view_init(elev=30, azim=-60)
+S_norm = [0,0,0]
+B_norm = [0,0,0]
+ax.legend()
+
+# ====== PLOT DE RÉFERENCE ====== #
+
+try:
+    while True:
+        line = None
+        packet = ["" for _ in range(14)]
+
+        if not q.empty():
+            line = q.get()
+            print(line)
+        
+        if line == "=== Données BMM150 ===":
+            for i in range(13):
+                if not q.empty():
+                    line = q.get()
+                    packet[i] = line
+                    print(line)
+
+        if packet[12] != "":
+            for i in range(13):
+                if packet[i] != None:
+
+                # === Lecture du magnétomètre ===
+
+                    if packet[i].startswith("X"):
+                        try:
+                            mag_data['x'] = float(packet[i].split(":")[1])
+                        except:
+                            pass
+                    elif packet[i].startswith("Y"):
+                        try:
+                            mag_data['y'] = float(packet[i].split(":")[1])
+                        except:
+                            pass
+                    elif packet[i].startswith("Z"):
+                        try:
+                            mag_data['z'] = float(packet[i].split(":")[1])    
+                        except:
+                            pass
+
+                # === Lecture panneaux solaires ===
+
+                    match = re.search(r"Panneau\s+(\d+)\s*\(pin\s*\d+\)\s*:\s*([-+]?[0-9]*\.?[0-9]+)\s*mA", packet[i])
+                    if match:
+                        num = int(match.group(1))
+                        courant = float(match.group(2))
+                        courants[num] = courant
+                        
+                
+                if None not in mag_data.values() and len(courants) == 6:
+
+                    # === Vecteur magnétique === 
+                    Vx, Vy, Vz = mag_data['x'], mag_data['y'], mag_data['z']
+                    normB = np.linalg.norm([Vx, Vy, Vz])
+                    if normB > 0:
+                        B_norm = np.array([Vx, Vy, Vz]) / normB
+                    else:
+                        B_norm = np.zeros(3)
+
+                    # === Vecteur Soleil–Satellite ===
+                    I1, I2, I3, I4, I5, I6 = [courants[i] for i in range(1, 7)]
+                    Vs = np.array([I1 - I4, I2 - I5, I3 - I6])
+                    normS = np.linalg.norm(Vs)
+                    if normS > 0:
+                        S_norm = Vs / normS
+                    else:
+                        S_norm = np.zeros(3)
+
+            X = [1,0,0]
+            Y = [0,1,0]
+            Z = [0,0,1]      
+
+            # ====== PREMIÈRE ROTATION ====== #
+
+            vx, vy, vz = produit_vectoriel(B_norm, B_ref)
+
+            Qrot = rotation_angle(B_norm,B_ref)
+
+            B_norm = rotation(Qrot,B_norm)
+            S_norm = rotation(Qrot,S_norm)
+
+            X = rotation(Qrot,X)
+            Y = rotation(Qrot,Y)
+            Z = rotation(Qrot,Z)
+
+            # ====== DEUXIÈME ROTATION ====== #
+
+            N_ref = produit_vectoriel(S_ref,B_ref)
+            N_norm = normalisation((produit_vectoriel(S_norm,B_norm)))
+
+            Qrot2 = rotation_angle(N_norm,N_ref)
+
+            B_norm = rotation(Qrot2,B_norm)
+            S_norm = rotation(Qrot2,S_norm)
+
+            X = rotation(Qrot2,X)
+            Y = rotation(Qrot2,Y)
+            Z = rotation(Qrot2,Z)
+
+            # ====== TRACÉ ====== #
+
+            ax.cla()
+            ax.set_xlim([-1, 1])
+            ax.set_ylim([-1, 1])
+            ax.set_zlim([-1, 1])
+            ax.set_xlabel('X (+/-)')
+            ax.set_ylabel('Y (+/-)')
+            ax.set_zlabel('Z (+/-)')
+            ax.set_title('Détermination d’attitude', fontsize=12, fontweight='heavy')
+
+            # === Axes de référence ===
+            ax.quiver(0, 0, 0, X[0], X[1], X[2], color='r', length=0.8, arrow_length_ratio=0.05, label = 'X satellite')
+            ax.quiver(0, 0, 0, Y[0], Y[1], Y[2], color='g', length=0.8, arrow_length_ratio=0.05, label = 'Y satellite')
+            ax.quiver(0, 0, 0, Z[0], Z[1], Z[2], color='b', length=0.8, arrow_length_ratio=0.05, label = 'Z satellite')
+
+            # === Vecteur Soleil-satellite de reference ===
+            ax.quiver(0, 0, 0, S_ref[0], S_ref[1], S_ref[2], color='darkorange', length=0.8, arrow_length_ratio=0.15, label = 'Vecteur soleil de réference')
+            
+            # === Vecteur Soleil-satellite ===
+            ax.quiver(0, 0, 0, S_norm[0], S_norm[1], S_norm[2], color='orange', length=0.8, arrow_length_ratio=0.15, label = 'Vecteur soleil après rotation')
+
+            # === Vecteur champ magnétique de reference ===
+            ax.quiver(0, 0, 0, B_ref[0], B_ref[1], B_ref[2], color='darkblue', length=0.8, arrow_length_ratio=0.15, label = 'Vecteur magnétique de réference')
+            
+            # === Vecteur champ magnétique ===
+            ax.quiver(0, 0, 0, B_norm[0], B_norm[1], B_norm[2], color='royalblue', length=0.8, arrow_length_ratio=0.15, label = 'Vecteur magnétique après rotation')
+            
+            ax.legend(loc='center right', bbox_to_anchor=(-0.15, 0.5), borderaxespad=0.)
+
+        plt.pause(0.05)
+
+except KeyboardInterrupt:
+    print("\nArrêt du programme par l'utilisateur.")
+    plt.ioff()
+    plt.show()
+    end.set()
+    writer_thread.join()
+
+finally: 
+    print("finally")
