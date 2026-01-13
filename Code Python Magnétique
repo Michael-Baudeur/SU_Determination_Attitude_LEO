@@ -1,0 +1,100 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Oct 17 15:11:10 2025
+
+@author: julesmartel
+"""
+
+import serial
+import time
+import numpy as np
+import matplotlib.pyplot as plt
+import quiver_display as qd
+
+
+# --- Port série ---
+port = '/dev/tty.usbserial-0001'   # adapte selon ton port
+baudrate = 115200
+ser = serial.Serial(port, baudrate, timeout=1)
+time.sleep(2)
+
+print("Lecture des données depuis l'Arduino...\n")
+
+# --- Préparation du graphique ---
+plt.ion()
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+ax.set_xlim([-10, 10])
+ax.set_ylim([-10, 10])
+ax.set_zlim([-10, 10])
+ax.set_title('Vecteur 3D (Arduino)')
+ax.view_init(elev=20, azim=-60)
+
+try:
+    while True:
+        # Lecture d'un paquet de 3 lignes
+        Vx = Vy = Vz = None
+        count = 0
+        while count < 3:
+            line = ser.readline().decode('utf-8', errors='ignore').strip()
+            if not line:
+                continue
+
+
+            if "ValueX" in line:
+                Vx = float(line.split(":")[1])
+                count += 1
+            elif "ValueY" in line:
+                Vy = float(line.split(":")[1])
+                count += 1
+            elif "ValueZ" in line:
+                Vz = float(line.split(":")[1])
+                count += 1
+
+        # Quand on a reçu les 3 valeurs du paquet
+        if None not in (Vx, Vy, Vz):
+            print(f"\nValueX : {Vx:.3f}")
+            print(f"ValueY : {Vy:.3f}")
+            print(f"ValueZ : {Vz:.3f}")
+            
+            V = np.array([Vx, Vy, Vz])
+            Vx1 = Vx/4095
+            Vy1 = Vy/4095
+            Vz1 = Vz/16383
+            Vx2 = Vx1/((Vx1**2+Vy1**2+Vz1**2)**(0.5))
+            Vy2 = Vy1/((Vx1**2+Vy1**2+Vz1**2)**(0.5))
+            Vz2 = Vz1/((Vx1**2+Vy1**2+Vz1**2)**(0.5))
+            Vnorm=np.array([Vx2, Vy2, Vz2])
+            print (Vnorm)
+            maxV = np.max(abs(Vnorm))
+            # --- Mise à jour du graphique ---
+            ax.cla()
+            ax.set_xlim([-maxV, maxV])
+            ax.set_ylim([-maxV, maxV])
+            ax.set_zlim([-maxV, maxV ])
+            ax.set_title('Vecteur 3D (Arduino)')
+            ax.view_init(elev=20, azim=-60)
+
+            # Tracer les axes de référence avec leurs couleurs et labels
+            ax.quiver(0, 0, 0, 1, 0, 0, color='r', length=maxV, arrow_length_ratio=0.25)
+            ax.text(maxV, 0, 0, 'X', color='r', fontsize=12, fontweight='bold')
+
+            ax.quiver(0, 0, 0, 0, 1, 0, color='g', length=maxV, arrow_length_ratio=0.25)
+            ax.text(0, maxV, 0, 'Y', color='g', fontsize=12, fontweight='bold')
+
+            ax.quiver(0, 0, 0, 0, 0, 1, color='b', length=maxV, arrow_length_ratio=0.25)
+            ax.text(0, 0, maxV, 'Z', color='b', fontsize=12, fontweight='bold')
+
+            # Tracer le vecteur mesuré
+            ax.quiver(0, 0, 0, Vx2, Vy2, Vz2, color='orange', length=0.5, arrow_length_ratio=0.25)
+
+            #plt.draw()
+            plt.pause(0.01)
+
+except KeyboardInterrupt:
+    print("Arrêt du programme.")
+    plt.ioff()
+    plt.show()
+finally:
+    ser.close()
